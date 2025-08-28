@@ -20,8 +20,12 @@ func main() {
 	userService := service.NewUserServiceImpl(userRepo, validate)
 	userHandler := handler.NewUserHandlerImpl(userService)
 
+	eventRepo := repository.NewEvenRepositoryImpl(db)
+	eventService := service.NewEventServiceImpl(eventRepo, validate)
+	eventHandler := handler.NewEventHandlerImpl(eventService)
 
-	routes := routes.NewRouter(userHandler)
+
+	routes := routes.NewRouter(userHandler, eventHandler)
 
 	port := os.Getenv("PORT_APP")
 	routes.Run(port)

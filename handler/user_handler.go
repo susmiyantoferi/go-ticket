@@ -107,7 +107,7 @@ func (u *userHandlerImpl) Delete(ctx *gin.Context) {
 	if err := u.UserService.Delete(ctx, uint(userId)); err != nil {
 		switch {
 		case errors.Is(err, exception.ErrorIdNotFound):
-			web.ResponseJSON(ctx, http.StatusBadRequest, "error", "id not found", nil)
+			web.ResponseJSON(ctx, http.StatusNotFound, "error", "id not found", nil)
 			return
 		default:
 			web.ResponseJSON(ctx, http.StatusInternalServerError, "error", "something wrong", nil)
