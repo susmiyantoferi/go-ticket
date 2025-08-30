@@ -15,7 +15,7 @@ type EvenRepository interface {
 	Update(ctx context.Context, id uint, event *entity.Event) (*entity.Event, error)
 	Delete(ctx context.Context, id uint) error
 	FindById(ctx context.Context, id uint) (*entity.Event, error)
-	FindAll(ctx context.Context) ([]*entity.Event, error)
+	FindAll(ctx context.Context, pg *entity.PaginateSearch) ([]*entity.Event, int64, error)
 }
 
 type evenRepositoryImpl struct {
@@ -82,12 +82,25 @@ func (e *evenRepositoryImpl) FindById(ctx context.Context, id uint) (*entity.Eve
 	return &events, nil
 }
 
-func (e *evenRepositoryImpl) FindAll(ctx context.Context) ([]*entity.Event, error) {
+func (e *evenRepositoryImpl) FindAll(ctx context.Context, pg *entity.PaginateSearch) ([]*entity.Event, int64, error) {
 	var events []*entity.Event
+	var totalItems int64
 
-	if err := e.Db.WithContext(ctx).Find(&events).Error; err != nil {
-		return nil, err
+	query := e.Db.WithContext(ctx).Model(&entity.Event{})
+
+	if pg.Search != "" {
+		query = query.Where("name LIKE ?", "%"+pg.Search+"%")
 	}
 
-	return events, nil
+	if err := query.Count(&totalItems).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (pg.Page - 1) * pg.PageSize
+
+	if err := query.Limit(pg.PageSize).Offset(offset).Find(&events).Error; err != nil {
+		return nil, 0, err
+	}
+
+	return events, totalItems, nil
 }

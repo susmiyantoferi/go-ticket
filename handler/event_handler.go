@@ -135,9 +135,29 @@ func (e *eventHandlerImpl) FindById(ctx *gin.Context) {
 }
 
 func (e *eventHandlerImpl) FindAll(ctx *gin.Context) {
-	result, err := e.EventService.FindAll(ctx)
+	req := entity.PaginateSearch{}
+
+	pageStr := ctx.DefaultQuery("page", "1")
+	pageSizeStr := ctx.DefaultQuery("page_size", "5")
+	search := ctx.DefaultQuery("search", "")
+
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	pageSize, err:= strconv.Atoi(pageSizeStr)
+	if err != nil || pageSize < 1{
+		pageSize = 5
+	}
+
+	req.Page = page
+	req.PageSize = pageSize
+	req.Search = search
+
+	result, err := e.EventService.FindAll(ctx, &req)
 	if err != nil {
-		web.ResponseJSON(ctx, http.StatusInternalServerError, "error", "something wrong", nil)
+		web.ResponseJSON(ctx, http.StatusInternalServerError, "error", err.Error(), nil)
 		return
 	}
 

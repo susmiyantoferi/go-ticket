@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"ticket/domain/entity"
 	"ticket/exception"
 	"ticket/repository"
@@ -16,7 +17,7 @@ type EventService interface {
 	Update(ctx context.Context, id uint, req *entity.EventUpdateRequest) (*entity.EventResponse, error)
 	Delete(ctx context.Context, id uint) error
 	FindById(ctx context.Context, id uint) (*entity.EventResponse, error)
-	FindAll(ctx context.Context) ([]*entity.EventResponse, error)
+	FindAll(ctx context.Context, req *entity.PaginateSearch) (*entity.PaginatedResponse, error)
 }
 
 type eventServiceImpl struct {
@@ -128,10 +129,10 @@ func (e *eventServiceImpl) FindById(ctx context.Context, id uint) (*entity.Event
 	return response, nil
 }
 
-func (e *eventServiceImpl) FindAll(ctx context.Context) ([]*entity.EventResponse, error) {
-	result, err := e.EventRepo.FindAll(ctx)
+func (e *eventServiceImpl) FindAll(ctx context.Context, req *entity.PaginateSearch) (*entity.PaginatedResponse, error) {
+	result, totalItems, err := e.EventRepo.FindAll(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("event service: find by all: %w", err)
+		return nil, fmt.Errorf("event service: find by id: %w", err)
 	}
 
 	var responses []*entity.EventResponse
@@ -148,5 +149,9 @@ func (e *eventServiceImpl) FindAll(ctx context.Context) ([]*entity.EventResponse
 		responses = append(responses, &response)
 	}
 
-	return responses, nil
+	totalPage := int(math.Ceil(float64(totalItems) / float64(req.PageSize)))
+
+	responsePaginate := entity.ToPaginatedResponse(int64(req.Page), totalPage, totalItems, responses)
+	return responsePaginate, nil
+
 }
