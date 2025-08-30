@@ -38,6 +38,8 @@ func NewRouter(UserHandler handler.UserHandler,
 			admin.DELETE("tickets/:id", TicketHandler.Delete)
 			admin.GET("tickets/:id", TicketHandler.FindById)
 			admin.GET("tickets", TicketHandler.FindAll)
+
+			admin.GET("reports/monthly", TicketHandler.MonthlyReports)
 		}
 
 		cust := api.Group("/")

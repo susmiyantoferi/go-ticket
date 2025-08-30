@@ -5,6 +5,7 @@ import (
 	"errors"
 	"ticket/domain/entity"
 	"ticket/exception"
+	"ticket/helper"
 
 	"gorm.io/gorm"
 )
@@ -16,6 +17,7 @@ type TicketRepository interface {
 	FindById(ctx context.Context, id uint) (*entity.Ticket, error)
 	FindByUserId(ctx context.Context, userId uint) ([]*entity.Ticket, error)
 	FindAll(ctx context.Context) ([]*entity.Ticket, error)
+	MonthlyReports(ctx context.Context) ([]*entity.ReportsSales, error)
 }
 
 type ticketRepositoryImpl struct {
@@ -123,4 +125,19 @@ func (t *ticketRepositoryImpl) FindAll(ctx context.Context) ([]*entity.Ticket, e
 	}
 
 	return ticks, nil
+}
+
+func (t *ticketRepositoryImpl) MonthlyReports(ctx context.Context) ([]*entity.ReportsSales, error) {
+	var data []*entity.ReportsSales
+
+	err := t.Db.WithContext(ctx).Table("tickets AS t").
+		Select("e.id AS event_id, e.name AS event_name, e.description AS event_description, DATE_FORMAT(t.created_at, '%Y-%m') AS month, SUM(t.qty) AS total_qty, SUM(t.qty * t.unit_price) AS total_sales").
+		Joins("JOIN events AS e ON t.event_id = e.id").Where("t.status = ?", helper.Confirm).
+		Group("DATE_FORMAT(t.created_at, '%Y-%m'), e.id, e.name, e.description").Order("month").Scan(&data).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }

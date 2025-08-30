@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"ticket/domain/entity"
 	"ticket/exception"
+	"ticket/helper"
 	"ticket/repository"
 
 	"github.com/go-playground/validator/v10"
@@ -18,6 +19,7 @@ type TicketService interface {
 	FindById(ctx context.Context, id uint) (*entity.TicketResponse, error)
 	FindByUserId(ctx context.Context, userId uint) ([]*entity.TicketResponse, error)
 	FindAll(ctx context.Context) ([]*entity.TicketResponse, error)
+	MonthlyReports(ctx context.Context) ([]*entity.ReportsSales, error)
 }
 
 type ticketServiceImpl struct {
@@ -33,12 +35,6 @@ func NewTicketServiceImpl(ticketRepo repository.TicketRepository, eventRepo repo
 		Validate:   validate,
 	}
 }
-
-const (
-	Confirm string = "confirm"
-	Cancel  string = "cancel"
-	Waiting string = "waiting"
-)
 
 func (t *ticketServiceImpl) Create(ctx context.Context, req *entity.TicketCreateRequest) (*entity.TicketResponse, error) {
 	if err := t.Validate.Struct(req); err != nil {
@@ -68,7 +64,7 @@ func (t *ticketServiceImpl) Create(ctx context.Context, req *entity.TicketCreate
 		Qty:         req.Qty,
 		UnitPrice:   event.Price,
 		TotalAmount: total,
-		Status:      Waiting,
+		Status:      helper.Waiting,
 	}
 
 	result, err := t.TicketRepo.Create(ctx, &ticks, event)
@@ -189,6 +185,28 @@ func (t *ticketServiceImpl) FindAll(ctx context.Context) ([]*entity.TicketRespon
 			Status:      v.Status,
 			CreatedAt:   v.CreatedAt,
 			UpdatedAt:   v.UpdatedAt,
+		}
+		responses = append(responses, &response)
+	}
+
+	return responses, nil
+}
+
+func (t *ticketServiceImpl) MonthlyReports(ctx context.Context) ([]*entity.ReportsSales, error) {
+	result, err := t.TicketRepo.MonthlyReports(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("ticket service: monthly report: %w", err)
+	}
+
+	var responses []*entity.ReportsSales
+	for _, v := range result {
+		response := entity.ReportsSales{
+			EventID: v.EventID,
+			EventName: v.EventName,
+			EventDescription: v.EventDescription,
+			Month:      v.Month,
+			TotalQty:   v.TotalQty,
+			TotalSales: v.TotalSales,
 		}
 		responses = append(responses, &response)
 	}

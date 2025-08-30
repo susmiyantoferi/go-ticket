@@ -20,6 +20,7 @@ type TicketHandler interface {
 	FindById(cxt *gin.Context)
 	FindByUserId(cxt *gin.Context)
 	FindAll(cxt *gin.Context)
+	MonthlyReports(ctx *gin.Context)
 }
 
 type ticketHandlerImpl struct {
@@ -171,6 +172,19 @@ func (t *ticketHandlerImpl) FindByUserId(ctx *gin.Context) {
 
 func (t *ticketHandlerImpl) FindAll(ctx *gin.Context) {
 	result, err := t.TicketService.FindAll(ctx)
+	if err != nil {
+		switch {
+		default:
+			web.ResponseJSON(ctx, http.StatusInternalServerError, "error", err.Error(), nil)
+			return
+		}
+	}
+
+	web.ResponseJSON(ctx, http.StatusOK, "success", "success", result)
+}
+
+func (t *ticketHandlerImpl) MonthlyReports(ctx *gin.Context) {
+	result, err := t.TicketService.MonthlyReports(ctx)
 	if err != nil {
 		switch {
 		default:
