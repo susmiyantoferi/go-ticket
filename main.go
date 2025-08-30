@@ -24,8 +24,11 @@ func main() {
 	eventService := service.NewEventServiceImpl(eventRepo, validate)
 	eventHandler := handler.NewEventHandlerImpl(eventService)
 
+	ticketRepo := repository.NewTicketRepositoryImpl(db)
+	ticketService := service.NewTicketServiceImpl(ticketRepo, eventRepo, validate)
+	ticketHandler := handler.NewTicketHandlerImpl(ticketService)
 
-	routes := routes.NewRouter(userHandler, eventHandler)
+	routes := routes.NewRouter(userHandler, eventHandler, ticketHandler)
 
 	port := os.Getenv("PORT_APP")
 	routes.Run(port)

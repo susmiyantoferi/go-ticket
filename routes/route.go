@@ -7,7 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewRouter(UserHandler handler.UserHandler, EventHandler handler.EventHandler) *gin.Engine {
+func NewRouter(UserHandler handler.UserHandler,
+	EventHandler handler.EventHandler,
+	TicketHandler handler.TicketHandler,
+) *gin.Engine {
 	router := gin.Default()
 
 	public := router.Group("/api/v1/")
@@ -30,6 +33,11 @@ func NewRouter(UserHandler handler.UserHandler, EventHandler handler.EventHandle
 			admin.PUT("events/:id", EventHandler.Update)
 			admin.DELETE("events/:id", EventHandler.Delete)
 			admin.GET("events/:id", EventHandler.FindById)
+
+			admin.PUT("tickets/:id", TicketHandler.Update)
+			admin.DELETE("tickets/:id", TicketHandler.Delete)
+			admin.GET("tickets/:id", TicketHandler.FindById)
+			admin.GET("tickets", TicketHandler.FindAll)
 		}
 
 		cust := api.Group("/")
@@ -39,6 +47,9 @@ func NewRouter(UserHandler handler.UserHandler, EventHandler handler.EventHandle
 			cust.GET("users/find", UserHandler.FindById)
 
 			cust.GET("events", EventHandler.FindAll)
+
+			cust.POST("tickets/orders", TicketHandler.Create)
+			cust.GET("tickets/users/", TicketHandler.FindByUserId)
 		}
 	}
 
